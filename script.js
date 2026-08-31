@@ -25,20 +25,44 @@ const diffRow = document.getElementById('diffRow');
 const duckBtn = document.getElementById('duckBtn');
 const installBtn = document.getElementById('installBtn');
 
+// ---------- Mobile viewport height fix ----------
+// Mobile Android/iOS browsers change the visible viewport height as the
+// address bar shows/hides, which can make a plain `height:100%` layout
+// overflow or collapse unpredictably. We measure the *real* visible height
+// with JS and expose it as a CSS custom property so layout is always
+// correct, instead of relying solely on CSS height:100%/vh units.
+function setAppHeight() {
+  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+}
+
 // ---------- Logical canvas size (CSS pixels) ----------
 let W = 0, H = 0, DPR = 1;
 
 function resizeCanvas() {
+  setAppHeight();
   const rect = gameWrap.getBoundingClientRect();
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = rect.width;
   H = rect.height;
+  // Safety net: if the wrapper somehow reports zero size (e.g. a browser
+  // with partial/buggy support for the CSS `aspect-ratio` property hasn't
+  // laid it out yet), fall back to the viewport itself so the game and its
+  // buttons are never invisible/unreachable.
+  if (!W || !H) {
+    W = window.innerWidth || 360;
+    H = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 640;
+  }
   canvas.width = Math.round(W * DPR);
   canvas.height = Math.round(H * DPR);
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   groundY = H * 0.82;
 }
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', resizeCanvas);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resizeCanvas);
+}
 
 // ---------- Game constants (scaled relative to canvas) ----------
 let groundY = 0;
@@ -221,11 +245,30 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
+// Primary input: Pointer Events (covers mouse, touch, and pen on all
+// modern browsers, including current Android Chrome/WebView/Samsung
+// Internet/Firefox).
 canvas.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   ensureAudio();
   handlePrimaryAction();
 }, { passive: false });
+
+// Fallback for the rare browser without Pointer Event support (some
+// older/embedded Android WebViews). Harmless to also register on modern
+// browsers since every action here (jump/start/restart) is safe to run
+// more than once for the same tap.
+canvas.addEventListener('touchstart', (e) => {
+  ensureAudio();
+  handlePrimaryAction();
+}, { passive: true });
+
+// Mouse-only fallback (covers desktop browsers or accessibility tools
+// that emit 'click' without a preceding pointerdown).
+canvas.addEventListener('click', () => {
+  ensureAudio();
+  handlePrimaryAction();
+});
 
 // Prevent scrolling / zooming interactions on mobile while playing
 document.addEventListener('touchmove', (e) => {
@@ -246,8 +289,7 @@ muteBtn.addEventListener('click', () => {
 
 // ---------- Duck button (touch/mouse, press-and-hold) ----------
 function duckPress(e) {
-  e.preventDefault();
-  e.stopPropagation();
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   ensureAudio();
   duckBtn.classList.add('pressed');
   setDucking(true);
@@ -261,6 +303,14 @@ duckBtn.addEventListener('pointerdown', duckPress, { passive: false });
 duckBtn.addEventListener('pointerup', duckRelease, { passive: false });
 duckBtn.addEventListener('pointercancel', duckRelease, { passive: false });
 duckBtn.addEventListener('pointerleave', duckRelease, { passive: false });
+// Touch-event fallback for browsers without full Pointer Event support.
+duckBtn.addEventListener('touchstart', duckPress, { passive: false });
+duckBtn.addEventListener('touchend', duckRelease, { passive: false });
+duckBtn.addEventListener('touchcancel', duckRelease, { passive: false });
+// Mouse fallback for desktop testing.
+duckBtn.addEventListener('mousedown', duckPress);
+duckBtn.addEventListener('mouseup', duckRelease);
+duckBtn.addEventListener('mouseleave', duckRelease);
 
 // ---------- Difficulty selector ----------
 function applyDifficultyUI() {
@@ -268,12 +318,15 @@ function applyDifficultyUI() {
     btn.classList.toggle('active', btn.dataset.diff === selectedDifficulty);
   });
 }
-diffRow.addEventListener('click', (e) => {
-  const btn = e.target.closest('.diff-btn');
-  if (!btn) return;
+function selectDifficulty(btn) {
+  if (!btn || !btn.dataset || !btn.dataset.diff) return;
   selectedDifficulty = btn.dataset.diff;
   localStorage.setItem(DIFF_KEY, selectedDifficulty);
   applyDifficultyUI();
+}
+diffRow.addEventListener('click', (e) => {
+  const btn = e.target.closest('.diff-btn');
+  if (btn) selectDifficulty(btn);
 });
 applyDifficultyUI();
 
@@ -586,85 +639,4 @@ function drawDino() {
 
   // legs (animated)
   ctx.fillStyle = '#227a4c';
-  const legSwing = dino.grounded ? Math.sin(dino.legPhase) : 0.4;
-  const legW = w * 0.16;
-  const legH = h * 0.32;
-  const leg1x = x + w * 0.18 + legSwing * w * 0.08;
-  const leg2x = x + w * 0.5 - legSwing * w * 0.08;
-  roundRect(leg1x, y + h * 0.78, legW, legH, legW * 0.3);
-  ctx.fill();
-  roundRect(leg2x, y + h * 0.78, legW, legH, legW * 0.3);
-  ctx.fill();
-
-  // little spikes on back
-  ctx.fillStyle = '#1f6e46';
-  for (let i = 0; i < 3; i++) {
-    const sx = x + w * (0.25 + i * 0.13);
-    ctx.beginPath();
-    ctx.moveTo(sx, y + h * 0.16);
-    ctx.lineTo(sx + w * 0.05, y + h * 0.02);
-    ctx.lineTo(sx + w * 0.1, y + h * 0.16);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function roundRect(x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-function drawObstacles() {
-  obstacles.forEach(o => {
-    if (o.type === 'cactus') {
-      ctx.fillStyle = '#2f9e46';
-      roundRect(o.x, o.y, o.w, o.h, o.w * 0.25);
-      ctx.fill();
-      ctx.fillStyle = '#257a37';
-      roundRect(o.x - o.w * 0.35, o.y + o.h * 0.25, o.w * 0.4, o.h * 0.35, o.w * 0.15);
-      ctx.fill();
-      roundRect(o.x + o.w * 0.95, o.y + o.h * 0.15, o.w * 0.4, o.h * 0.35, o.w * 0.15);
-      ctx.fill();
-    } else {
-      // bird — color hints at required action: orange = duck under it, red = jump over it
-      ctx.fillStyle = o.requiresDuck ? '#e08a3c' : '#e05252';
-      const flap = Math.sin(o.wingPhase) * o.h * 0.5;
-      ctx.beginPath();
-      ctx.ellipse(o.x + o.w * 0.5, o.y + o.h * 0.5, o.w * 0.4, o.h * 0.35, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // wings
-      ctx.beginPath();
-      ctx.moveTo(o.x + o.w * 0.5, o.y + o.h * 0.5);
-      ctx.lineTo(o.x, o.y + o.h * 0.5 - flap);
-      ctx.lineTo(o.x + o.w * 0.35, o.y + o.h * 0.55);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(o.x + o.w * 0.5, o.y + o.h * 0.5);
-      ctx.lineTo(o.x + o.w, o.y + o.h * 0.5 - flap);
-      ctx.lineTo(o.x + o.w * 0.65, o.y + o.h * 0.55);
-      ctx.closePath();
-      ctx.fill();
-      // beak
-      ctx.fillStyle = '#ffb347';
-      ctx.beginPath();
-      ctx.moveTo(o.x + o.w * 0.85, o.y + o.h * 0.45);
-      ctx.lineTo(o.x + o.w * 1.05, o.y + o.h * 0.5);
-      ctx.lineTo(o.x + o.w * 0.85, o.y + o.h * 0.58);
-      ctx.closePath();
-      ctx.fill();
-    }
-  });
-}
-
-function drawParticles() {
-  ctx.fillStyle = 'rgba(120,90,60,0.5)';
-  particles.forEach(p => {
-    ctx.gl
+  const legSwing = dino.grounded ? Math.sin(di
