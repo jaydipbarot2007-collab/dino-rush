@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Dino Rush</title>
+
+<!-- PWA metadata -->
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Dino Rush - an original endless runner. Jump and duck to survive!">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dino Rush">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="game-wrap" id="gameWrap">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Top HUD -->
+    <div class="hud">
+      <div class="score-box">
+        <span class="score-label">SCORE</span>
+        <span id="scoreValue">0</span>
+      </div>
+      <div class="score-box hi">
+        <span class="score-label">BEST</span>
+        <span id="highScoreValue">0</span>
+      </div>
+      <button id="installBtn" class="icon-btn hidden" aria-label="Install app" title="Install app">⬇️</button>
+      <button id="muteBtn" class="icon-btn" aria-label="Mute sound">🔊</button>
+    </div>
+
+    <!-- Start Screen -->
+    <div class="overlay" id="startScreen">
+      <div class="panel">
+        <h1>🦖 Dino Rush</h1>
+        <p>Tap/click or press <b>Space</b> to jump. Hold the duck button or press <b>Down</b> to duck under flying enemies.</p>
+
+        <div class="diff-row" id="diffRow">
+          <button class="diff-btn" data-diff="easy">Easy</button>
+          <button class="diff-btn active" data-diff="medium">Medium</button>
+          <button class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+
+        <button id="startBtn" class="primary-btn">Start Game</button>
+        <p class="hint">Speed increases the longer you survive!</p>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="overlay hidden" id="gameOverScreen">
+      <div class="panel">
+        <h1>💥 Game Over</h1>
+        <p id="finalScoreText">Score: 0</p>
+        <p id="newHighScoreText" class="new-best hidden">🏆 New Best Score!</p>
+        <button id="restartBtn" class="primary-btn">Restart</button>
+      </div>
+    </div>
+
+    <!-- Mobile tap hint (fades after first tap) -->
+    <div class="tap-hint" id="tapHint">Tap to jump &bull; Hold ⬇ to duck</div>
+
+    <!-- On-screen duck control (mobile) -->
+    <button id="duckBtn" class="duck-btn hidden" aria-label="Duck">⬇</button>
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>

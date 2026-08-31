@@ -1,0 +1,278 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Generic utility — hides any element regardless of its other classes */
+.hidden {
+  display: none !important;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #0d1117;
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  touch-action: manipulation;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 950px;
+  max-height: 560px;
+  aspect-ratio: 16 / 9;
+  background: #87ceeb;
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: 0 0 40px rgba(0,0,0,0.6);
+  touch-action: none;
+}
+
+/* Portrait / mobile phones -> 9:16 style layout */
+@media (max-aspect-ratio: 3/4) {
+  .game-wrap {
+    max-width: 500px;
+    max-height: 100%;
+    aspect-ratio: 9 / 16;
+    border-radius: 0;
+  }
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.score-box {
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  min-width: 64px;
+}
+
+.score-box.hi {
+  color: #ffd76a;
+}
+
+.score-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  opacity: 0.75;
+  font-weight: 600;
+}
+
+.icon-btn {
+  margin-left: auto;
+  pointer-events: auto;
+  background: rgba(0,0,0,0.35);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
+  background: rgba(0,0,0,0.55);
+}
+
+/* ---------- Overlays ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10,15,25,0.72), rgba(10,15,25,0.85));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: opacity 0.25s ease;
+  padding: 20px;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.panel {
+  text-align: center;
+  color: #fff;
+  max-width: 340px;
+  animation: pop-in 0.35s ease;
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.panel h1 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.panel p {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.panel .hint {
+  margin-top: 14px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.new-best {
+  color: #ffd76a !important;
+  font-weight: 700;
+  opacity: 1 !important;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #06210f;
+  border: none;
+  padding: 13px 34px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.45);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.primary-btn:active {
+  transform: scale(0.94);
+  box-shadow: 0 3px 10px rgba(34, 197, 94, 0.4);
+}
+
+/* ---------- Tap hint ---------- */
+.tap-hint {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.3);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  z-index: 4;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.tap-hint.hidden {
+  opacity: 0;
+}
+
+/* ---------- Difficulty selector ---------- */
+.diff-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.diff-btn {
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.18);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.diff-btn:active {
+  transform: scale(0.93);
+}
+
+.diff-btn.active {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border-color: #22c55e;
+  color: #06210f;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+}
+
+/* ---------- Duck button (mobile touch control) ---------- */
+.duck-btn {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  font-size: 26px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  transition: background 0.12s ease, transform 0.1s ease;
+}
+
+.duck-btn.hidden {
+  display: none;
+}
+
+.duck-btn.pressed {
+  background: rgba(74, 222, 128, 0.55);
+  transform: translateX(-50%) scale(0.9);
+}
+
+/* Prevent iOS/Android long-press callouts & text selection artifacts everywhere in-game */
+.game-wrap, .game-wrap * {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
